@@ -12,7 +12,7 @@ builds:
     binary: manager
 release:
   extra_files:
-    - glob: build/manifests.tar.gz
+    - glob: build/minio-ext-operator.tar.gz
 
 checksum:
   name_template: 'checksums.txt'
