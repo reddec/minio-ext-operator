@@ -1,0 +1,7 @@
+namespace: minio
+resources:
+  - secrets.yaml
+  - minio-ext-operator.yaml
+
+patches:
+  - patch_env.yaml

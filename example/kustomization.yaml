@@ -1,6 +1,5 @@
 namespace: demo
 resources:
-  - ns.yaml
   - secrets.yaml
   - minio.yaml
   - minio-ext-operator.yaml

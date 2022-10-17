@@ -17,7 +17,7 @@ generate: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, 
 
 .PHONY: run
 run: manifests generate
-	MINIO_URL=$(shell kubectl get nodes -o wide --no-headers | awk '{print $$6":30080"}') \
+	MINIO_ENDPOINT=$(shell kubectl get nodes -o wide --no-headers | awk '{print $$6":30080"}') \
 	MINIO_USER="minioadmin" \
 	MINIO_PASSWORD="minioadmin" \
 	MINIO_REGION="us-east-1" \
@@ -26,11 +26,15 @@ run: manifests generate
 .PHONY: install
 
 bundle: manifests generate
-	rm -rf build && mkdir build
+	rm -rf build && mkdir -p build/manifests
 	cp -rv config ./build/
 	cd build/config/default && kustomize edit set image controller=${IMAGE}
-	kustomize build build/config/default > build/minio-ext-operator.yaml
+	kustomize build build/config/default > build/manifests/minio-ext-operator.yaml
 	rm -rf build/config
+	cp deploy/* build/manifests
+	mv build/manifests build/minio-ext-operator
+	tar -C build -zcf build/minio-ext-operator.tar.gz minio-ext-operator
+
 
 bundle-example: manifests generate
 	rm -rf build && mkdir build

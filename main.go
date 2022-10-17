@@ -72,7 +72,7 @@ func main() {
 		panic(err)
 	}
 
-	client, err := minio.New(cfg.URL, &minio.Options{
+	client, err := minio.New(cfg.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.User, cfg.Password, ""),
 		Secure: cfg.Secure,
 		Region: cfg.Region,
@@ -81,7 +81,7 @@ func main() {
 		panic(err)
 	}
 
-	admin, err := madmin.New(cfg.URL, cfg.User, cfg.Password, cfg.Secure)
+	admin, err := madmin.New(cfg.Endpoint, cfg.User, cfg.Password, cfg.Secure)
 	if err != nil {
 		panic(err)
 	}
@@ -165,7 +165,7 @@ func FromEnv() (*Config, error) {
 }
 
 type Config struct {
-	URL      string `required:"true" envconfig:"URL"`
+	Endpoint string `required:"true" envconfig:"ENDPOINT"`
 	User     string `required:"true" envconfig:"USER"`
 	Password string `required:"true" envconfig:"PASSWORD"`
 	Region   string `required:"true" envconfig:"REGION"`

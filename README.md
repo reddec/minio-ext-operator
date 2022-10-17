@@ -1,82 +1,71 @@
 # minio-ext-operator
-// TODO(user): Add simple overview of use/purpose
+
+Creates bucket, user, and policy in Minio.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
 
-It is namespaced operator, which requires independent installation for each namespace. Check [example](example).
+Reflects CRD as Minio objects.
+
+**Create user**
+
+```yaml
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: User
+metadata:
+  name: user-sample # user name in minio
+spec:
+  secretName: my-user # optional, default to <CRD-name>-minio
+```
+
+**Create bucket**
+
+```yaml
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: Bucket
+metadata:
+  name: bucket-sample # bucket name in minio
+spec:
+  retain: false # optional (default: false) - do not remove bucket after CRD removal
+  public: false # optional (default: false) - allow anonymous GetObject (download only)
+```
+
+- even if `public: true` directory listing is not allowed
+
+**Create policy**
+
+```yaml
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: Policy
+metadata:
+  name: policy-sample
+spec:
+  user: my-user # username (key_id)
+  read: false # read permissions
+  write: true # write permissions
+```
+
+- `read: true` with `write: true` is special case and means all operations are allowed.
+
+It is **namespaced** operator, which requires independent installation for each namespace. Check [example](example).
 
 ## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
-### Running on the cluster
-1. Install Instances of Custom Resources:
+### Install operator template
 
-```sh
-kubectl apply -f config/samples/
+```bash
+curl -L https://github.com/reddec/minio-ext-operator/releases/latest/download/minio-ext-operator.tar.gz | \
+tar zxf -
 ```
 
-2. Build and push your image to the location specified by `IMG`:
-	
-```sh
-make docker-build docker-push IMG=<some-registry>/minio-ext-operator:tag
-```
-	
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+### Setup environment and variables
 
-```sh
-make deploy IMG=<some-registry>/minio-ext-operator:tag
-```
+- `kustomization.yaml` - namespace
+- `patch_env.yaml` - secrets and endpoints
+- `secrets.yaml` - minio admin user and password
 
-### Uninstall CRDs
-To delete the CRDs from the cluster:
+Feel free to adjust kustomize as much as you wish
 
-```sh
-make uninstall
-```
-
-### Undeploy controller
-UnDeploy the controller to the cluster:
-
-```sh
-make undeploy
-```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
-which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
-make install
-```
-
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
-
-```sh
-make run
-```
-
-**NOTE:** You can also run this in one step by running: `make install run`
-
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
-```
-
-**NOTE:** Run `make --help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+* Create manifests
 
 ## License
 

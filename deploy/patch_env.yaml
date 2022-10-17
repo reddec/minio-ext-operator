@@ -14,7 +14,7 @@ spec:
             - name: MINIO_SECURE
               value: "false"
             - name: MINIO_ENDPOINT
-              value: "minio:80"
+              value: "http://minio"
             - name: MINIO_USER
               valueFrom:
                 secretKeyRef:
