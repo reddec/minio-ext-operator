@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-ext-operator-controller-manager
+  namespace: minio
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          env:
+            - name: MINIO_REGION
+              value: us-east-1
+            - name: MINIO_SECURE
+              value: "false"
+            - name: MINIO_URL
+              value: "http://minio"
+            - name: MINIO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: user
+            - name: MINIO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: password

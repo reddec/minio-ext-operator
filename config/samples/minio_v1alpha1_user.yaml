@@ -1,0 +1,6 @@
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: User
+metadata:
+  name: user-sample # also user name
+spec:
+  secretName: my-user # optional, default to <CRD-name>-minio

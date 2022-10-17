@@ -1,0 +1,10 @@
+# Adds namespace to all resources.
+namespace: minio
+
+namePrefix: minio-ext-operator-
+
+bases:
+  - ../crd
+  - ../rbac
+  - ../manager
+

@@ -1,0 +1,10 @@
+namespace: demo
+resources:
+  - ns.yaml
+  - secrets.yaml
+  - minio.yaml
+  - minio-ext-operator.yaml
+
+
+patches:
+  - patch_env.yaml # adjust creds and environment

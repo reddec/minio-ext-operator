@@ -1,0 +1,46 @@
+domain: k8s.reddec.net
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: minio-ext-operator
+repo: github.com/reddec/minio-ext-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.reddec.net
+  group: minio
+  kind: User
+  path: github.com/reddec/minio-ext-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.reddec.net
+  group: minio
+  kind: Bucket
+  path: github.com/reddec/minio-ext-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.reddec.net
+  group: minio
+  kind: Access
+  path: github.com/reddec/minio-ext-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: k8s.reddec.net
+  group: minio
+  kind: Policy
+  path: github.com/reddec/minio-ext-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

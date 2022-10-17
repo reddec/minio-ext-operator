@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- minio_v1alpha1_user.yaml
+- minio_v1alpha1_bucket.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
