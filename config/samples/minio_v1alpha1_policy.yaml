@@ -1,0 +1,8 @@
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: Policy
+metadata:
+  name: policy-sample
+spec:
+  user: my-user # username (key_id)
+  read: false # read permissions
+  write: true # write permissions

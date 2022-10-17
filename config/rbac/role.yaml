@@ -47,6 +47,32 @@ rules:
 - apiGroups:
   - minio.k8s.reddec.net
   resources:
+  - policies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - minio.k8s.reddec.net
+  resources:
+  - policies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - minio.k8s.reddec.net
+  resources:
+  - policies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - minio.k8s.reddec.net
+  resources:
   - users
   verbs:
   - create

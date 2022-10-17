@@ -1,0 +1,21 @@
+---
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: User
+metadata:
+  name: updater
+---
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: Bucket
+metadata:
+  name: public
+spec:
+  public: true
+---
+apiVersion: minio.k8s.reddec.net/v1alpha1
+kind: Policy
+metadata:
+  name: policy-sample
+spec:
+  user: updater
+  read: true
+  write: true

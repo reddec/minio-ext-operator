@@ -23,45 +23,43 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// BucketSpec defines the desired state of Bucket
-type BucketSpec struct {
-	// Public policy for anonymous access: get only, no listing.
-	Public bool `json:"public,omitempty"`
-	// Do not delete bucket
-	Retain bool `json:"retain,omitempty"`
+// PolicySpec defines the desired state of Policy
+type PolicySpec struct {
+	// User name (client_id)
+	User string `json:"user"`
+	// Read permissions
+	Read bool `json:"read,omitempty"`
+	// Write permissions
+	Write bool `json:"write,omitempty"`
 }
 
-const (
-	BucketConditionCreated        = "bucketCreated"
-	BucketConditionPolicyAssigned = "bucketPolicyAssigned"
-)
-
-// BucketStatus defines the observed state of Bucket
-type BucketStatus struct {
-	Conditions []metav1.Condition `json:"conditions"`
+// PolicyStatus defines the observed state of Policy
+type PolicyStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Bucket is the Schema for the buckets API
-type Bucket struct {
+// Policy is the Schema for the policies API
+type Policy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BucketSpec   `json:"spec,omitempty"`
-	Status BucketStatus `json:"status,omitempty"`
+	Spec   PolicySpec   `json:"spec,omitempty"`
+	Status PolicyStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// BucketList contains a list of Bucket
-type BucketList struct {
+// PolicyList contains a list of Policy
+type PolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Bucket `json:"items"`
+	Items           []Policy `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Bucket{}, &BucketList{})
+	SchemeBuilder.Register(&Policy{}, &PolicyList{})
 }

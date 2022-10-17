@@ -35,25 +35,6 @@ spec:
           spec:
             description: BucketSpec defines the desired state of Bucket
             properties:
-              access:
-                description: Access to bucket
-                items:
-                  description: BucketAccess defines permissions per each user. Combination
-                    read+write means full access.
-                  properties:
-                    read:
-                      description: Read permissions
-                      type: boolean
-                    user:
-                      description: User name (client_id)
-                      type: string
-                    write:
-                      description: Write permissions
-                      type: boolean
-                  required:
-                  - user
-                  type: object
-                type: array
               public:
                 description: 'Public policy for anonymous access: get only, no listing.'
                 type: boolean

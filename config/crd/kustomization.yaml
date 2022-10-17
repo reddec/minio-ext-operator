@@ -4,5 +4,6 @@
 resources:
 - bases/minio.k8s.reddec.net_users.yaml
 - bases/minio.k8s.reddec.net_buckets.yaml
+- bases/minio.k8s.reddec.net_policies.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 

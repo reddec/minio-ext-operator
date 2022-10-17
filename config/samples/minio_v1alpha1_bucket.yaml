@@ -5,8 +5,3 @@ metadata:
 spec:
   retain: false # optional (default: false) - do not remove bucket after CRD removal
   public: false # optional (default: false) - allow anonymous GetObject (download only)
-  access: # optional (default: []) - set access for user
-    - user: my-user # username (key_id)
-      read: false # read permissions
-      write: true # write permissions
-      # corner case is read + write - means full access to bucket

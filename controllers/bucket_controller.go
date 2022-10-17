@@ -25,6 +25,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/policy"
 	"github.com/minio/minio-go/v7/pkg/set"
 	miniov1alpha1 "github.com/reddec/minio-ext-operator/api/v1alpha1"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,6 +33,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const bucketFinalizer = "reddec.net.k8s.minio-bucket-finalizer"
@@ -52,13 +54,19 @@ type BucketReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var manifest *miniov1alpha1.Bucket
+	logger := log.FromContext(ctx)
+
+	var manifest = &miniov1alpha1.Bucket{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, manifest); err != nil {
+		if errors2.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, fmt.Errorf("get manifest: %w", err)
 	}
 
 	// removal
 	if manifest.GetDeletionTimestamp() != nil {
+		logger.Info("removing bucket (if needed)")
 		if err := r.removeBucket(ctx, manifest); err != nil {
 			return ctrl.Result{}, fmt.Errorf("remove bucket: %w", err)
 		}
@@ -79,8 +87,10 @@ func (r *BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// always create bucket
 	if exist, err := r.Minio.BucketExists(ctx, manifest.Name); err != nil {
+		logger.Info("bucket already exists")
 		return ctrl.Result{}, fmt.Errorf("check bucket: %w", err)
 	} else if !exist {
+		logger.Info("creating new bucket")
 		if err := r.Minio.MakeBucket(ctx, manifest.Name, minio.MakeBucketOptions{}); err != nil {
 			return ctrl.Result{}, fmt.Errorf("create bucket: %w", err)
 		}
@@ -94,6 +104,8 @@ func (r *BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// always set policy
+	logger.Info("updating bucket policy")
+
 	if err := r.setBucketPolicy(ctx, manifest); err != nil {
 		return ctrl.Result{}, fmt.Errorf("set bucket policy: %w", err)
 	}
@@ -135,25 +147,6 @@ func mustPolicy(manifest *miniov1alpha1.Bucket) string {
 	if manifest.Spec.Public {
 		p.Statements = append(p.Statements, policy.Statement{
 			Actions: set.CreateStringSet("s3:GetObject"),
-			Effect:  "Allow",
-			Principal: policy.User{
-				AWS: set.CreateStringSet("*"),
-			},
-			Resources: set.CreateStringSet("arn:aws:s3:::" + manifest.Name + "/*"),
-		})
-	}
-
-	for _, access := range manifest.Spec.Access {
-		var perms set.StringSet
-		if access.Read && access.Write {
-			perms = set.CreateStringSet("s3:*")
-		} else if access.Read {
-			perms = readRights()
-		} else if access.Write {
-			perms = set.CreateStringSet("s3:PutObject")
-		}
-		p.Statements = append(p.Statements, policy.Statement{
-			Actions: perms,
 			Effect:  "Allow",
 			Principal: policy.User{
 				AWS: set.CreateStringSet("*"),

@@ -31,15 +31,6 @@ resources:
   controller: true
   domain: k8s.reddec.net
   group: minio
-  kind: Access
-  path: github.com/reddec/minio-ext-operator/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: k8s.reddec.net
-  group: minio
   kind: Policy
   path: github.com/reddec/minio-ext-operator/api/v1alpha1
   version: v1alpha1

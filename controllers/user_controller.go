@@ -34,9 +34,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const userFinalizer = "reddec.net.k8s.minio-user-finalizer"
+const secretSize = 32
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
@@ -55,13 +57,19 @@ type UserReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
 	var manifest miniov1alpha1.User
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, &manifest); err != nil {
+		if errors2.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, fmt.Errorf("get manifest: %w", err)
 	}
 
 	// removal
 	if manifest.GetDeletionTimestamp() != nil {
+		logger.Info("removing user")
 		if err := r.removeUser(ctx, &manifest); err != nil {
 			return ctrl.Result{}, fmt.Errorf("remove user: %w", err)
 		}
@@ -80,30 +88,36 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
-	if !meta.IsStatusConditionTrue(manifest.Status.Conditions, miniov1alpha1.UserConditionCreated) {
-		if err := r.Admin.AddUser(ctx, manifest.Name, mustGetSecret(16)); err != nil {
-			return ctrl.Result{}, fmt.Errorf("create user: %w", err)
-		}
-		meta.SetStatusCondition(&manifest.Status.Conditions, metav1.Condition{
-			Type:   miniov1alpha1.UserConditionCreated,
-			Status: "true",
-		})
-		if err := r.Update(ctx, &manifest); err != nil {
-			return ctrl.Result{}, fmt.Errorf("update status: %w", err)
-		}
+	// create or update secret
+	logger.Info("creating secret")
+	secret, err := r.createOrUpdateSecret(ctx, &manifest)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("set secret: %w", err)
+	}
+	meta.SetStatusCondition(&manifest.Status.Conditions, metav1.Condition{
+		Type:   miniov1alpha1.UserConditionSecretCreated,
+		Status: "true",
+	})
+	if err := r.Update(ctx, &manifest); err != nil {
+		return ctrl.Result{}, fmt.Errorf("update status (2): %w", err)
 	}
 
-	if !meta.IsStatusConditionTrue(manifest.Status.Conditions, miniov1alpha1.UserConditionSecretCreated) {
-		if err := r.createOrUpdateSecret(ctx, &manifest); err != nil {
-			return ctrl.Result{}, fmt.Errorf("set secret: %w", err)
-		}
-		meta.SetStatusCondition(&manifest.Status.Conditions, metav1.Condition{
-			Type:   miniov1alpha1.UserConditionSecretCreated,
-			Status: "true",
-		})
-		if err := r.Update(ctx, &manifest); err != nil {
-			return ctrl.Result{}, fmt.Errorf("update status (2): %w", err)
-		}
+	// create user
+	logger.Info("creating user")
+	if err := r.Admin.AddUser(ctx, manifest.Name, secret); err != nil {
+		return ctrl.Result{}, fmt.Errorf("create user: %w", err)
+	}
+	meta.SetStatusCondition(&manifest.Status.Conditions, metav1.Condition{
+		Type:   miniov1alpha1.UserConditionCreated,
+		Status: "true",
+	})
+	if err := r.Update(ctx, &manifest); err != nil {
+		return ctrl.Result{}, fmt.Errorf("update status: %w", err)
+	}
+
+	// update user
+	if err := r.Admin.SetUser(ctx, manifest.Name, secret, madmin.AccountEnabled); err != nil {
+		return ctrl.Result{}, fmt.Errorf("update user: %w", err)
 	}
 
 	return ctrl.Result{RequeueAfter: time.Minute, Requeue: true}, nil
@@ -114,46 +128,46 @@ func (r *UserReconciler) removeUser(ctx context.Context, manifest *miniov1alpha1
 	if err == nil {
 		return nil
 	}
-	if v, ok := err.(madmin.ErrorResponse); ok && v.Code == "ErrAdminNoSuchUser" {
+	if v, ok := err.(madmin.ErrorResponse); ok && v.Code == "XMinioAdminNoSuchUser" {
 		return nil
 	}
 	return fmt.Errorf("remove user: %w", err)
 }
 
-func (r *UserReconciler) createOrUpdateSecret(ctx context.Context, manifest *miniov1alpha1.User) error {
-	info, err := r.Admin.GetUserInfo(ctx, manifest.Name)
-	if err != nil {
-		return fmt.Errorf("get user: %w", err)
-	}
-
-	var secret *v1.Secret
-	err = r.Get(ctx, client.ObjectKey{Namespace: manifest.Namespace, Name: manifest.SecretName()}, secret)
+func (r *UserReconciler) createOrUpdateSecret(ctx context.Context, manifest *miniov1alpha1.User) (string, error) {
+	var secret = &v1.Secret{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: manifest.Namespace, Name: manifest.SecretName()}, secret)
 	if err == nil {
+		_, hasName := secret.Data["AWS_ACCESS_KEY_ID"]
+		if pass, hasSecret := secret.Data["AWS_SECRET_ACCESS_KEY"]; hasSecret && hasName && len(pass) == 2*secretSize {
+			return string(pass), nil
+		}
+		pass := mustGetSecret(secretSize)
 		secret.Data = map[string][]byte{
 			"AWS_ACCESS_KEY_ID":     []byte(manifest.Name),
-			"AWS_SECRET_ACCESS_KEY": []byte(info.SecretKey),
+			"AWS_SECRET_ACCESS_KEY": []byte(pass),
 		}
-		return r.Update(ctx, secret)
+		return pass, r.Update(ctx, secret)
 	}
-	if errors2.IsNotFound(err) {
-		secret := &v1.Secret{
-			ObjectMeta: ctrl.ObjectMeta{
-				Name:      manifest.SecretName(),
-				Namespace: manifest.Namespace,
-			},
-			Data: map[string][]byte{
-				"AWS_ACCESS_KEY_ID":     []byte(manifest.Name),
-				"AWS_SECRET_ACCESS_KEY": []byte(info.SecretKey),
-			},
-		}
-
-		if err := ctrl.SetControllerReference(manifest, secret, r.Scheme); err != nil {
-			return fmt.Errorf("set controller refrence: %w", err)
-		}
-
-		return r.Create(ctx, secret)
+	if !errors2.IsNotFound(err) {
+		return "", err
 	}
-	return err
+	pass := mustGetSecret(secretSize)
+	secret = &v1.Secret{
+		ObjectMeta: ctrl.ObjectMeta{
+			Name:      manifest.SecretName(),
+			Namespace: manifest.Namespace,
+		},
+		Data: map[string][]byte{
+			"AWS_ACCESS_KEY_ID":     []byte(manifest.Name),
+			"AWS_SECRET_ACCESS_KEY": []byte(pass),
+		},
+	}
+
+	if err := ctrl.SetControllerReference(manifest, secret, r.Scheme); err != nil {
+		return "", fmt.Errorf("set controller refrence: %w", err)
+	}
+	return pass, r.Create(ctx, secret)
 }
 
 // SetupWithManager sets up the controller with the Manager.

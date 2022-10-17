@@ -4,3 +4,4 @@ bin/
 testbin/
 build/
 .bin
+dist

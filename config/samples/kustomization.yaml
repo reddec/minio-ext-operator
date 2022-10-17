@@ -2,4 +2,5 @@
 resources:
 - minio_v1alpha1_user.yaml
 - minio_v1alpha1_bucket.yaml
+- minio_v1alpha1_policy.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

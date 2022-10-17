@@ -17,7 +17,7 @@ generate: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, 
 
 .PHONY: run
 run: manifests generate
-	MINIO_URL=$(shell kubectl get nodes -o wide --no-headers | awk '{print "http://"$$6}:9000') \
+	MINIO_URL=$(shell kubectl get nodes -o wide --no-headers | awk '{print $$6":30080"}') \
 	MINIO_USER="minioadmin" \
 	MINIO_PASSWORD="minioadmin" \
 	MINIO_REGION="us-east-1" \
