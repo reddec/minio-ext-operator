@@ -17,6 +17,12 @@ spec:
   secretName: my-user # optional, default to <CRD-name>-minio
 ```
 
+Secret contains:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+
+
 **Create bucket**
 
 ```yaml
