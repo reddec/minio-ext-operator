@@ -45,6 +45,7 @@ kind: Policy
 metadata:
   name: policy-sample
 spec:
+  bucket: public # bucket name
   user: my-user # username (key_id)
   read: false # read permissions
   write: true # write permissions

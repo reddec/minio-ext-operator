@@ -16,6 +16,7 @@ kind: Policy
 metadata:
   name: policy-sample
 spec:
+  bucket: public
   user: updater
   read: true
   write: true

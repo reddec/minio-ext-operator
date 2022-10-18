@@ -27,6 +27,8 @@ import (
 type PolicySpec struct {
 	// User name (client_id)
 	User string `json:"user"`
+	// Bucket to access
+	Bucket string `json:"bucket"`
 	// Read permissions
 	Read bool `json:"read,omitempty"`
 	// Write permissions

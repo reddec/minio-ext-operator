@@ -130,7 +130,7 @@ func mustIAMPolicy(manifest *miniov1alpha1.Policy) []byte {
 		Principal: policy.User{
 			AWS: set.CreateStringSet(manifest.Spec.User),
 		},
-		Resources: set.CreateStringSet("arn:aws:s3:::" + manifest.Name + "/*"),
+		Resources: set.CreateStringSet("arn:aws:s3:::" + manifest.Spec.Bucket + "/*"),
 	})
 
 	data, err := json.Marshal(p)
